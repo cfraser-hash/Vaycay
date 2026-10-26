@@ -29,9 +29,19 @@ export default function Search() {
           placeholderTextColor="#888"
         />
 
+        {/* Number of Travelers */}
+
+        <Text style={styles.heading}>How many travelers are attending this trip?</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Enter number of travelers..."
+          placeholderTextColor="#888"
+        />
+
         {/* Budget */}
 
-        <Text style={styles.heading}>What's your budget?</Text>
+        <Text style={styles.heading}>What's your budget per person?</Text>
 
         <TextInput
           style={styles.input}
@@ -69,10 +79,6 @@ export default function Search() {
           <TouchableOpacity style={styles.activityButton}>
             <Text style={styles.activityText}> Nature</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.activityButton}>
-            <Text style={styles.activityText}> Nature</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Trip Length */}
@@ -90,7 +96,7 @@ export default function Search() {
 
         <TouchableOpacity style={styles.searchButton}>
           <Text style={styles.searchText}>
-            Find My Trip
+            Generate My Trip
           </Text>
         </TouchableOpacity>
 
@@ -102,13 +108,13 @@ export default function Search() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: 'lightblue',
+    backgroundColor: '#176B58',
   },
 
   container: {
     padding: 25,
     paddingTop: 50,
-    paddingBottom: 50,
+    paddingBottom: 100,
   },
 
   title: {
