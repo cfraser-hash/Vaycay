@@ -1,7 +1,0 @@
-{
-  "scripts": {
-    "start": "node server.js",
-    "db:sync": "node server/config/syncDb.js"
-  }
-}
-
