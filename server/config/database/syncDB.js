@@ -11,8 +11,7 @@ dotenv.config();
 async function syncDatabase() {
   try {
     // 1. Connect to MongoDB Atlas securely using environment variables
-    const mongoUri = process.env.MONGO_URI || "mongodb+srv://cfraser_db_user:QOIwOwx19gzu5BJF@vaycayproject.3usvts5.mongodb.net/VAYCAY?retryWrites=true&w=majority";
-    
+    const mongoUri = process.env.MONGO_URI;
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB Atlas successfully!');
 
