@@ -1,6 +1,9 @@
 
 // VAYCAY Backend Server
 
+// Load environment variables
+require("dotenv").config();
+
 // Import Node.js HTTP module
 const http = require("http");
 
