@@ -1,17 +1,75 @@
-import { Link } from 'expo-router';
+
+import { Link, router } from 'expo-router';
+import { useState } from 'react';
 import {
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
+import { signupUser } from './services/api';
+
 export default function Signup() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function handleSignup() {
+    setMessage('');
+
+    if (
+      !firstName ||
+      !lastName ||
+      !username ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
+      setMessage('Please complete all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const result = await signupUser({
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
+
+      setMessage(result.message || 'Account created successfully!');
+      router.replace('/splash')
+
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to create account.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
 
-      {/* VAYCAY Logo / Title */}
       <Text style={styles.logo}>Vaycay</Text>
 
       <Text style={styles.title}>Create Your Account</Text>
@@ -20,50 +78,79 @@ export default function Signup() {
         Start planning your next adventure.
       </Text>
 
-      {/* Name */}
       <TextInput
         style={styles.input}
-        placeholder="Full Name"
+        placeholder="First Name"
         placeholderTextColor="#888"
+        value={firstName}
+        onChangeText={setFirstName}
       />
 
-      {/* Email */}
+      <TextInput
+        style={styles.input}
+        placeholder="Last Name"
+        placeholderTextColor="#888"
+        value={lastName}
+        onChangeText={setLastName}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Username"
+        placeholderTextColor="#888"
+        autoCapitalize="none"
+        value={username}
+        onChangeText={setUsername}
+      />
+
       <TextInput
         style={styles.input}
         placeholder="Email"
         placeholderTextColor="#888"
         autoCapitalize="none"
         keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
       />
 
-      {/* Password */}
       <TextInput
         style={styles.input}
         placeholder="Password"
         placeholderTextColor="#888"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
 
-      {/* Confirm Password */}
       <TextInput
         style={styles.input}
         placeholder="Confirm Password"
         placeholderTextColor="#888"
         secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
       />
 
-      {/* Sign Up Button */}
-      <Pressable style={styles.button}>
-        <Text style={styles.buttonText}>Create Account</Text>
-      </Pressable>
+      {message ? (
+        <Text style={styles.message}>{message}</Text>
+      ) : null}
 
-      {/* Login */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Creating Account...' : 'Create Account'}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.loginContainer}>
         <Text style={styles.accountText}>
           Already have an account?{' '}
         </Text>
 
-        <Link href="./login" style={styles.loginLink}>
+        <Link href="/login" style={styles.loginLink}>
           Log In
         </Link>
       </View>
@@ -127,6 +214,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: 'bold',
+  },
+
+  message: {
+    color: '#285D7A',
+    textAlign: 'center',
+    marginBottom: 12,
   },
 
   loginContainer: {

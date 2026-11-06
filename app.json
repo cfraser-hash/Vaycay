@@ -26,10 +26,16 @@
       "favicon": "/assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "root": "./frontend/app"
+        }
+      ],
       [
         "expo-splash-screen",
         {
+        
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76

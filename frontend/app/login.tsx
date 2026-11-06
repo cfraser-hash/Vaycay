@@ -1,17 +1,63 @@
-import { Link } from 'expo-router';
+
+import { Link, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
+import { loginUser } from './services/api';
+
 export default function Login() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function handleLogin() {
+    setMessage('');
+
+    if (!email || !password) {
+      setMessage('Please enter your email and password.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const result = await loginUser({
+        email,
+        password,
+      });
+
+      // We'll add secure token storage in the next step.
+      console.log('Login successful:', result.user);
+
+      setMessage('Login successful!');
+
+      // Navigate to the main app
+      router.replace('/splash');
+
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to log in.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
 
-      {/* VAYCAY Logo / Title */}
       <Text style={styles.logo}>Vaycay</Text>
 
       <Text style={styles.title}>Welcome Back!</Text>
@@ -20,29 +66,39 @@ export default function Login() {
         Log in to continue planning your next adventure.
       </Text>
 
-      {/* Email */}
       <TextInput
         style={styles.input}
         placeholder="Email"
         placeholderTextColor="#888"
         autoCapitalize="none"
         keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
       />
 
-      {/* Password */}
       <TextInput
         style={styles.input}
         placeholder="Password"
         placeholderTextColor="#888"
         secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
 
-      {/* Login Button */}
-      <Pressable style={styles.button}>
-        <Text style={styles.buttonText}>Log In</Text>
-      </Pressable>
+      {message ? (
+        <Text style={styles.message}>{message}</Text>
+      ) : null}
 
-      {/* Sign Up */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Logging In...' : 'Log In'}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.signupContainer}>
         <Text style={styles.accountText}>
           Don't have an account?{' '}
@@ -112,6 +168,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: 'bold',
+  },
+
+  message: {
+    color: '#285D7A',
+    textAlign: 'center',
+    marginBottom: 12,
   },
 
   signupContainer: {

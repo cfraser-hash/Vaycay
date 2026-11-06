@@ -1,14 +1,14 @@
 
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
 
 import { destinations } from "../../data/destinations";
 
@@ -23,9 +23,9 @@ export default function DestinationDetailsScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.title}>Destination not found</Text>
-        <Pressable onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backText}>Go back</Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -38,13 +38,13 @@ export default function DestinationDetailsScreen() {
       />
 
       <View style={styles.content}>
-        <Pressable
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={22} color="#172B26" />
           <Text style={styles.backText}>Back to Discover</Text>
-        </Pressable>
+        </TouchableOpacity>
 
         <Text style={styles.category}>
           {destination.category} · {destination.country}
@@ -87,7 +87,7 @@ export default function DestinationDetailsScreen() {
           </View>
         ))}
 
-        <Pressable
+        <TouchableOpacity
           style={styles.planButton}
           onPress={() =>
             router.push({
@@ -103,7 +103,7 @@ export default function DestinationDetailsScreen() {
             size={19}
             color="#FFFFFF"
           />
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

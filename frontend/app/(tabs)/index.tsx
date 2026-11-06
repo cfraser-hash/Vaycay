@@ -1,15 +1,16 @@
+
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   FlatList,
   Image,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -22,7 +23,6 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const filteredDestinations = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -96,7 +96,7 @@ export default function DiscoverScreen() {
           />
 
           {search.length > 0 && (
-            <Pressable
+            <TouchableOpacity
               onPress={() => setSearch("")}
               accessibilityLabel="Clear search"
             >
@@ -105,7 +105,7 @@ export default function DiscoverScreen() {
                 size={21}
                 color="#6B7280"
               />
-            </Pressable>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -120,7 +120,7 @@ export default function DiscoverScreen() {
             const selected = selectedCategory === category;
 
             return (
-              <Pressable
+              <TouchableOpacity
                 key={category}
                 onPress={() => setSelectedCategory(category)}
                 style={[
@@ -138,7 +138,7 @@ export default function DiscoverScreen() {
                 >
                   {category}
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </ScrollView>
@@ -159,14 +159,16 @@ export default function DiscoverScreen() {
               size={42}
               color="#8A9099"
             />
+
             <Text style={styles.emptyTitle}>
               No destinations found
             </Text>
+
             <Text style={styles.emptyText}>
               Try another search or select a different category.
             </Text>
 
-            <Pressable
+            <TouchableOpacity
               onPress={() => {
                 setSearch("");
                 setSelectedCategory("All");
@@ -176,7 +178,7 @@ export default function DiscoverScreen() {
               <Text style={styles.resetButtonText}>
                 Show all destinations
               </Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
@@ -185,55 +187,59 @@ export default function DiscoverScreen() {
             scrollEnabled={false}
             contentContainerStyle={styles.destinationList}
             renderItem={({ item }) => (
-              <Pressable
-                style={styles.card}
-                onPress={() => openDestination(item.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Explore ${item.name}, ${item.country}`}
-              >
-                <Image
-                  source={{ uri: item.image }}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
+              <View style={styles.card}>
+                {/* Clickable destination content */}
+                <TouchableOpacity
+                  onPress={() => openDestination(item.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Explore ${item.name}, ${item.country}`}
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
 
-                <View style={styles.cardContent}>
-                  <View style={styles.cardText}>
-                    <Text style={styles.cardName}>{item.name}</Text>
-                    <Text style={styles.cardCountry}>
-                      {item.country} · {item.category}
-                    </Text>
-                    <Text style={styles.cardBudget}>
-                      Est. ${item.budget.toLocaleString()} per trip
-                    </Text>
+                  <View style={styles.cardContent}>
+                    <View style={styles.cardText}>
+                      <Text style={styles.cardName}>
+                        {item.name}
+                      </Text>
+
+                      <Text style={styles.cardCountry}>
+                        {item.country} · {item.category}
+                      </Text>
+
+                      <Text style={styles.cardBudget}>
+                        Est. ${item.budget.toLocaleString()} per trip
+                      </Text>
+                    </View>
                   </View>
+                </TouchableOpacity>
 
-                  <Pressable
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      toggleSaved(item.id);
-                    }}
-                    hitSlop={10}
-                    style={styles.bookmarkButton}
-                    accessibilityRole="button"
-                    accessibilityLabel={
+                {/* Independent bookmark button */}
+                <TouchableOpacity
+                  onPress={() => toggleSaved(item.id)}
+                  hitSlop={10}
+                  style={styles.bookmarkButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    savedIds.includes(item.id)
+                      ? `Remove ${item.name} from saved`
+                      : `Save ${item.name}`
+                  }
+                >
+                  <Ionicons
+                    name={
                       savedIds.includes(item.id)
-                        ? `Remove ${item.name} from saved`
-                        : `Save ${item.name}`
+                        ? "bookmark"
+                        : "bookmark-outline"
                     }
-                  >
-                    <Ionicons
-                      name={
-                        savedIds.includes(item.id)
-                          ? "bookmark"
-                          : "bookmark-outline"
-                      }
-                      size={23}
-                      color="#176B58"
-                    />
-                  </Pressable>
-                </View>
-              </Pressable>
+                    size={23}
+                    color="#176B58"
+                  />
+                </TouchableOpacity>
+              </View>
             )}
           />
         )}
@@ -244,10 +250,12 @@ export default function DiscoverScreen() {
             size={26}
             color="#176B58"
           />
+
           <View style={styles.inspirationText}>
             <Text style={styles.inspirationTitle}>
               Your next trip starts here
             </Text>
+
             <Text style={styles.inspirationDescription}>
               Explore places, save your favorites, and start planning
               an adventure that fits your interests.
@@ -372,7 +380,7 @@ const styles = StyleSheet.create({
   },
   cardText: {
     flex: 1,
-    paddingRight: 8,
+    paddingRight: 56,
   },
   cardName: {
     color: "#172B26",
@@ -391,6 +399,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bookmarkButton: {
+    position: "absolute",
+    right: 15,
+    bottom: 15,
     width: 42,
     height: 42,
     borderRadius: 22,
@@ -450,3 +461,4 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 });
+
