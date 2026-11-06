@@ -22,7 +22,13 @@ async function signup(req, res) {
             email,
             password
         } = req.body;
-
+console.log("SIGNUP REQUEST RECEIVED");
+console.log("Signup data:", {
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    username: req.body.username,
+    email: req.body.email
+});
         // Validate required fields
         if (!firstName || !lastName || !username || !email || !password) {
             return res.status(400).json({
@@ -92,6 +98,7 @@ async function signup(req, res) {
 
     } catch (error) {
         console.error("Signup error:", error);
+        console.error("Error details:", error.stack);
 
         return res.status(500).json({
             success: false,

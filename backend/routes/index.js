@@ -36,7 +36,8 @@ function createResponseAdapter(res) {
 
 // Handle API requests
 async function handleRoutes(req, res) {
-    const { method, url } = req;
+    const method = req.method;
+    const url = new URL(req.url, "http://localhost").pathname 
 
     let body = "";
 

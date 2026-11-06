@@ -2,15 +2,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-import { destinations } from "../../data/destinations";
+import { destinations } from "../../../data/destinations";
 
 export default function DestinationDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

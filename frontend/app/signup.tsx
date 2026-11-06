@@ -2,14 +2,14 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
-import { signupUser } from './services/api';
+import { signupUser } from '../services/api';
 
 export default function Signup() {
   const [firstName, setFirstName] = useState('');

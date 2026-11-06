@@ -1,3 +1,4 @@
+
 // VAYCAY Backend Server
 
 // Load environment variables
@@ -35,26 +36,19 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    handleRoutes(req, res);
-const { creatUserIndexes } = require("../models/User");
-
     // Send request to routing system
     handleRoutes(req, res);
-
 });
 
 // Start backend and database
 async function startServer() {
-
     try {
-
         // Connect to MongoDB first
         await connectDB();
         await createUserIndexes();
 
         // Start HTTP server
         server.listen(PORT, () => {
-
             console.log("--------------------------------");
             console.log("       VAYCAY BACKEND");
             console.log("--------------------------------");
@@ -62,19 +56,15 @@ async function startServer() {
             console.log(`Health check: http://localhost:${PORT}/api/health`);
             console.log(`API information: http://localhost:${PORT}/api`);
             console.log("--------------------------------");
-
         });
 
     } catch (error) {
-
         console.error("Failed to start VAYCAY backend:", error.message);
-
         process.exit(1);
-
     }
-
 }
 
 // Initialize server
 startServer();
+
 
