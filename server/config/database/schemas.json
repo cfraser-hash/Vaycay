@@ -47,11 +47,11 @@
             "description": "optional string bio"
           },
           "created_at": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "timestamp recording when the user registered"
           },
           "updated_at": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "timestamp recording when the user profile was last updated"
           }
         }
@@ -75,16 +75,55 @@
             "description": "must be a string and is required"
           },
           "startDate": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "must be a date and is required"
           },
           "endDate": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "must be a date and is required"
           },
           "budget": {
             "bsonType": ["number", "double", "int"],
             "description": "must be a number if specified"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "itineraries",
+    "validator": {
+      "$jsonSchema": {
+        "title": "itineraries",
+        "bsonType": "object",
+        "required": ["trip", "user", "title", "activities"],
+        "properties": {
+          "trip": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the associated trip"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the owner user"
+          },
+          "title": {
+            "bsonType": "string",
+            "description": "must be a string title for the itinerary"
+          },
+          "activities": {
+            "bsonType": "array",
+            "description": "array of activity items or daily plans",
+            "items": {
+              "bsonType": "object"
+            }
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp when created"
+          },
+          "updated_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp when last updated"
           }
         }
       }
@@ -121,7 +160,7 @@
             "description": "must be an array of user ObjectIds who liked this post"
           },
           "created_at": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "must be a date recording when the post was published"
           }
         }
@@ -149,7 +188,7 @@
             "description": "must be a string containing the message content"
           },
           "sent_at": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "must be a date recording when the message was sent"
           },
           "is_read": {
@@ -177,7 +216,7 @@
             "description": "must be an ObjectId referencing the saved Trip"
           },
           "savedAt": {
-            "bsonType": "date",
+            "bsonType": ["date", "string"],
             "description": "must be a date recording when it was saved"
           }
         }

@@ -1,44 +1,59 @@
-// server/config/syncDb.js
+// server/config/database/syncDB.js
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 const createIndexes = require('./seedIndexes');
 
-// Load environment variables from .env file
 dotenv.config();
 
 async function syncDatabase() {
   try {
-    // 1. Connect to MongoDB Atlas using environment variables
     const mongoUri = process.env.MONGO_URI;
-    await mongoose.connect(mongoUri);
-    console.log('✅ Connected to MongoDB Atlas successfully!');
-
-    const db = mongoose.connection.db;
-
-    // 2. Load and Apply Schemas from schemas.json
-    const schemasPath = path.join(__dirname, 'schemas.json');
-    if (fs.existsSync(schemasPath)) {
-      const rawData = fs.readFileSync(schemasPath);
-      const schemas = JSON.parse(rawData);
-
-      for (const item of schemas) {
-        await db.command({
-          collMod: item.collection,
-          validator: item.validator,
-          validationLevel: 'strict'
-        }).catch(async (err) => {
-          // If collection doesn't exist yet, create it with validator
-          if (err.codeName === 'NamespaceNotFound') {
-            await db.createCollection(item.collection, { validator: item.validator });
-          }
-        });
-        console.log(`📋 Applied schema validation to '${item.collection}' collection.`);
-      }
+    if (!mongoUri) {
+      throw new Error('MONGO_URI secret/environment variable is missing!');
     }
 
-    // 3. Apply Indexes from seedIndexes.js
+    // Explicitly set dbName to 'VAYCAY'
+    await mongoose.connect(mongoUri, { dbName: 'VAYCAY' });
+    console.log('✅ Connected to MongoDB Atlas (VAYCAY database) successfully!');
+
+    const db = mongoose.connection.db;
+    const schemasPath = path.join(__dirname, 'schemas.json');
+
+    // Load and Apply Schemas from schemas.json (same folder)
+    if (fs.existsSync(schemasPath)) {
+      const schemas = JSON.parse(fs.readFileSync(schemasPath, 'utf8'));
+
+      for (const item of schemas) {
+        try {
+          // 1. Remove old validator rule completely to clear Atlas cache
+          await db.command({
+            collMod: item.collection,
+            validator: {}
+          });
+
+          // 2. Apply new validator rule from schemas.json
+          await db.command({
+            collMod: item.collection,
+            validator: item.validator,
+            validationLevel: 'strict'
+          });
+          console.log(`📋 Updated schema validation for '${item.collection}'.`);
+        } catch (err) {
+          if (err.codeName === 'NamespaceNotFound' || err.code === 26) {
+            await db.createCollection(item.collection, { validator: item.validator });
+            console.log(`📋 Created '${item.collection}' collection with schema validation.`);
+          } else {
+            console.error(`❌ Failed to apply schema to '${item.collection}':`, err.message);
+          }
+        }
+      }
+    } else {
+      console.error(`❌ schemas.json not found at path: ${schemasPath}`);
+    }
+
+    // Apply Indexes from seedIndexes.js
     await createIndexes();
 
     console.log('🚀 Database sync complete! Check MongoDB Compass to verify.');
@@ -50,5 +65,3 @@ async function syncDatabase() {
 }
 
 syncDatabase();
-
-
