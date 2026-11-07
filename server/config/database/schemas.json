@@ -5,16 +5,55 @@
       "$jsonSchema": {
         "title": "users",
         "bsonType": "object",
-        "required": ["name", "email", "password"],
+        "required": [
+          "first_name",
+          "last_name",
+          "username",
+          "email",
+          "password"
+        ],
         "properties": {
-          "name": { "bsonType": "string" },
+          "first_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "last_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "username": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
           "email": {
             "bsonType": "string",
-            "pattern": "^.+@.+$"
+            "pattern": "^.+@.+$",
+            "description": "must be a valid email string and is required"
           },
-          "password": { "bsonType": "string" },
-          "bio": { "bsonType": "string" },
-          "profile_picture_url": { "bsonType": "string" }
+          "password": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "passwordHash": {
+            "bsonType": "string",
+            "description": "optional hashed password string"
+          },
+          "profile_picture_url": {
+            "bsonType": "string",
+            "description": "optional string URL for profile picture"
+          },
+          "bio": {
+            "bsonType": "string",
+            "description": "optional string bio"
+          },
+          "created_at": {
+            "bsonType": "date",
+            "description": "timestamp recording when the user registered"
+          },
+          "updated_at": {
+            "bsonType": "date",
+            "description": "timestamp recording when the user profile was last updated"
+          }
         }
       }
     }
