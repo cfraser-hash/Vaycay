@@ -22,13 +22,7 @@ async function signup(req, res) {
             email,
             password
         } = req.body;
-console.log("SIGNUP REQUEST RECEIVED");
-console.log("Signup data:", {
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    username: req.body.username,
-    email: req.body.email
-});
+
         // Validate required fields
         if (!firstName || !lastName || !username || !email || !password) {
             return res.status(400).json({
@@ -89,16 +83,15 @@ console.log("Signup data:", {
             token,
             user: {
                 id: result.insertedId,
-                firstName: user.firstName,
-                lastName: user.lastName,
+                firstName: user.first_name,
+                lastName: user.last_name,
                 username: user.username,
                 email: user.email
             }
         });
 
     } catch (error) {
-        console.error("Signup error:", error);
-        console.error("Error details:", error.stack);
+        console.error("Signup error:", error.message);
 
         return res.status(500).json({
             success: false,
@@ -111,9 +104,11 @@ console.log("Signup data:", {
 async function login(req, res) {
     try {
         const { email, password } = req.body;
+        console.log("LOGIN REQUEST RECEIVED");
 
         // Validate required fields
         if (!email || !password) {
+            console.loh("Login Failed: Missing email or password.");
             return res.status(400).json({
                 success: false,
                 message: "Email and password are required."
@@ -124,6 +119,7 @@ async function login(req, res) {
         const user = await findUserByEmail(email);
 
         if (!user) {
+            console.log("Login Failed: Invalid credentials.");
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password."
@@ -133,7 +129,7 @@ async function login(req, res) {
         // Verify password
         const passwordIsValid = await verifyPassword(
             password,
-            user.passwordHash
+            user.password
         );
 
         if (!passwordIsValid) {
@@ -145,6 +141,7 @@ async function login(req, res) {
 
         // Generate token
         const token = generateToken(user);
+        console.log("Login successful!");
 
         return res.status(200).json({
             success: true,
@@ -152,8 +149,8 @@ async function login(req, res) {
             token,
             user: {
                 id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
+                firstName: user.first_name,
+                lastName: user.last_name,
                 username: user.username,
                 email: user.email
             }

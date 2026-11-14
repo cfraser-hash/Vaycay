@@ -2,14 +2,15 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { loginUser } from '../services/api';
+import { saveAuthToken } from '../services/authStorage';
 
 export default function Login() {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function Login() {
       });
 
       // We'll add secure token storage in the next step.
+      if (!result.token) {
+        throw new Error('Login succeeded but no authentication token was returned');
+      }
+      await saveAuthToken(result.token);
       console.log('Login successful:', result.user);
 
       setMessage('Login successful!');

@@ -10,11 +10,12 @@ const {
 function formatUser(user) {
     return {
         id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         username: user.username,
         email: user.email,
-        profilePicture: user.profilePicture,
+        profilePicture: user.profilePicture || "",
+        coverPhoto: user.coverPhoto || "",
         bio: user.bio,
         createdAt: user.createdAt
     };
@@ -55,7 +56,8 @@ async function updateProfile(req, res) {
             lastName,
             username,
             bio,
-            profilePicture
+            profilePicture,
+            coverPhoto,
         } = req.body;
 
         const user = await findUserById(req.user.userId);
@@ -78,7 +80,7 @@ async function updateProfile(req, res) {
                 });
             }
 
-            updates.firstName = firstName.trim();
+            updates.first_name = firstName.trim();
         }
 
         if (lastName !== undefined) {
@@ -89,7 +91,7 @@ async function updateProfile(req, res) {
                 });
             }
 
-            updates.lastName = lastName.trim();
+            updates.last_name = lastName.trim();
         }
 
         if (username !== undefined) {
@@ -139,6 +141,17 @@ async function updateProfile(req, res) {
             }
 
             updates.profilePicture = profilePicture;
+        }
+
+        if (coverPhoto !== undefined) {
+            if (typeof coverPhoto !== "string") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid cover photo value."
+                });
+            }
+
+             updates.coverPhoto = coverPhoto;
         }
 
         if (Object.keys(updates).length === 0) {

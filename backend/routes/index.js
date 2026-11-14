@@ -11,6 +11,9 @@ const {
     authenticateUser
 } = require("../middleware/authMiddleware");
 
+const {
+    createProfilePhotoSignature
+} = require("../controllers/cloudinaryController");
 // Send JSON responses
 function sendJson(res, statusCode, data) {
     res.writeHead(statusCode, {
@@ -70,8 +73,15 @@ async function handleRoutes(req, res) {
                         "POST /api/auth/signup",
                         "POST /api/auth/login",
                         "GET /api/users/profile",
-                        "PUT /api/users/profile"
+                        "PUT /api/users/profile",
+                        "POST /api/users/profile-photo/sign"
                     ]
+                });
+            }
+            // CREATE PROFILE PHOTO UPLOAD SIGNATURE
+            if (method === "POST" && url === "/api/users/profile-photo/sign") {
+                return authenticateUser(req, response, async () => {
+                    await createProfilePhotoSignature(req, response);
                 });
             }
 

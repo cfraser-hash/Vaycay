@@ -37,23 +37,24 @@ async function createUser(userData) {
 
     const newUser = {
 
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
         username: userData.username,
         email: userData.email,
 
         // Store hashed password, never plain text
-        passwordHash: userData.passwordHash,
+        password: userData.passwordHash,
 
         // Default profile information
         profilePicture: "",
+        coverPhoto: "",
         bio: "",
 
         createdAt: new Date(),
         updatedAt: new Date()
 
     };
-
+    
     const result = await users.insertOne(newUser);
 
     return result;

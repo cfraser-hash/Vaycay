@@ -1,21 +1,36 @@
-
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  ImageSourcePropType,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import {
+  getProfile,
+  updateProfile,
+  uploadProfileImage
+} from '../../services/api';
+import { getAuthToken } from '../../services/authStorage';
 
 export default function Profile() {
-  // Temporary user data.
-  // Later, connect this to login and your database.
-  const [user, setUser] = useState({
+  // User profile information
+  const [user, setUser] = useState<{
+    name: string;
+    username: string;
+    bio: string;
+    profilePicture: ImageSourcePropType;
+    coverPhoto: ImageSourcePropType;
+    trips: number;
+    posts: number;
+    saved: number;
+}>({
     name: 'Your Name',
     username: 'username',
     bio: 'Tell people a little about yourself.',
@@ -24,39 +39,202 @@ export default function Profile() {
     trips: 0,
     posts: 0,
     saved: 0,
-  });
+});
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editUsername, setEditUsername] = useState(user.username);
   const [editBio, setEditBio] = useState(user.bio);
+  const [saving, setSaving] = useState(false);
 
-  const saveProfile = () => {
+  // LOAD USER PROFILE FROM DATABASE
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const token = await getAuthToken();
+
+        if (!token) {
+          console.log('No authentication token found.');
+          return;
+        }
+
+        const data = await getProfile(token);
+
+        if (data.success && data.user) {
+          const profile = data.user;
+
+          setUser((currentUser) => ({
+            ...currentUser,
+            name: `${profile.firstName} ${profile.lastName}`,
+            username: profile.username,
+            bio: profile.bio || '',
+            profilePicture: profile.profilePicture
+              ? { uri: profile.profilePicture}
+              : currentUser.profilePicture,
+
+            coverPhoto: profile.coverPhoto
+              ? { uri: profile.coverPhoto}
+              : currentUser.coverPhoto, 
+          }));
+        }
+      } catch (error) {
+        console.error('Unable to load profile:', error);
+      }
+    }
+
+    loadProfile();
+  }, []);
+
+  // SAVE PROFILE CHANGES TO DATABASE
+  const saveProfile = async () => {
+    if (saving) return;
+
     if (!editName.trim() || !editUsername.trim()) {
-      Alert.alert('Missing information', 'Please enter your name and username.');
+      Alert.alert(
+        'Missing information',
+        'Please enter your name and username.'
+      );
       return;
     }
 
-    setUser({
-      ...user,
-      name: editName.trim(),
-      username: editUsername.trim().replace(/^@/, ''),
-      bio: editBio.trim(),
-    });
+    // Separate first and last names
+    const nameParts = editName.trim().split(/\s+/);
 
-    setEditing(false);
-    Alert.alert('Profile updated', 'Your changes have been saved for this session.');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ');
+
+    if (!lastName) {
+      Alert.alert(
+        'Missing information',
+        'Please enter both your first and last name.'
+      );
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      // Retrieve authentication token
+      const token = await getAuthToken();
+
+      if (!token) {
+        Alert.alert('Error', 'Please log in again.');
+        return;
+      }
+
+      // Send updated profile information to backend
+      const result = await updateProfile(token, {
+        firstName,
+        lastName,
+        username: editUsername.trim().replace(/^@/, ''),
+        bio: editBio.trim(),
+      });
+
+      if (result.success && result.user) {
+        // Update the profile displayed on screen
+        setUser((currentUser) => ({
+          ...currentUser,
+          name: `${result.user.firstName} ${result.user.lastName}`,
+          username: result.user.username,
+          bio: result.user.bio || '',
+        }));
+
+        setEditing(false);
+
+        Alert.alert(
+          'Profile updated',
+          'Your profile has been saved successfully!'
+        );
+      } else {
+        Alert.alert('Update failed', 'Unable to update your profile.');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Update failed',
+        error instanceof Error
+          ? error.message
+          : 'Unable to update your profile.'
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const openPhotoMessage = () => {
-    Alert.alert(
-      'Profile photos',
-      'Photo uploading will be available when photo selection is connected.'
+  // SELECT AND SAVE PROFILE OR COVER PHOTO
+    const selectPhoto = async (photoType: 'profile' | 'cover') => {
+      try {
+        const permission =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (!permission.granted) {
+          Alert.alert(
+            'Permission required',
+            'Please allow photo library access to select an image.'
+          );
+          return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          aspect: photoType === 'profile' ? [1, 1] : [16, 9],
+          quality: 0.8,
+          exif: false, 
+        });
+
+        if (result.canceled || !result.assets?.length) {
+          return;
+        }
+
+        const token = await getAuthToken();
+
+        if (!token) {
+          Alert.alert('Error', 'Please log in again.');
+          return;
+        }
+        console.log("Image picker result:", result);
+
+        if (result.canceled || !result.assets?.length) {
+          console.log("Image selection canceled.");
+          return;
+        }
+
+        console.log("Selected image:", result.assets[0]);
+    // Upload image and save its URL in MongoDB
+    const imageUrl = await uploadProfileImage(
+      token,
+      result.assets[0],
+      photoType
     );
-  };
 
+    // Display the permanently saved image
+    setUser((currentUser) => ({
+      ...currentUser,
+      [photoType === 'profile' ? 'profilePicture' : 'coverPhoto']:
+        { uri: imageUrl },
+    }));
+
+    Alert.alert(
+      'Photo saved!',
+      photoType === 'profile'
+        ? 'Your profile picture has been updated.'
+        : 'Your cover photo has been updated.'
+    );
+
+  } catch (error) {
+    console.error('Photo upload error:', error);
+
+    Alert.alert(
+      'Upload failed',
+      error instanceof Error
+        ? error.message
+        : 'Unable to save your photo.'
+    );
+  }
+};
+
+  // OPEN TRIP PLANNER
   const openTrips = () => {
-    // Update this route if your trip-planning screen has a different path.
     router.push('./trip-planner');
   };
 
@@ -67,13 +245,16 @@ export default function Profile() {
       showsVerticalScrollIndicator={false}
     >
       {/* COVER PHOTO */}
-      <View style={styles.coverContainer}>
-        <Image source={user.coverPhoto} style={styles.coverPhoto} />
+    <View style={styles.coverContainer}>
+      <Image source={user.coverPhoto} style={styles.coverPhoto} />
 
-        <View style={styles.coverLabel}>
-          <Text style={styles.coverLabelText}>MY TRAVEL PROFILE</Text>
-        </View>
-      </View>
+      <TouchableOpacity
+        style={styles.coverEditButton}
+        onPress={() => selectPhoto('cover')}
+      >
+        <Text style={styles.coverEditText}>Edit Cover</Text>
+      </TouchableOpacity>
+    </View>
 
       {/* PROFILE PICTURE */}
       <View style={styles.profilePictureContainer}>
@@ -84,7 +265,7 @@ export default function Profile() {
 
         <TouchableOpacity
           style={styles.cameraButton}
-          onPress={openPhotoMessage}
+          onPress={() => selectPhoto('profile')}
           accessibilityLabel="Change profile picture"
         >
           <Text style={styles.cameraText}>+</Text>
@@ -111,9 +292,14 @@ export default function Profile() {
                 setEditing(true);
               }
             }}
+            disabled={saving}
           >
             <Text style={styles.editText}>
-              {editing ? 'Save Profile' : '✎ Edit Profile'}
+              {saving
+                ? 'Saving...'
+                : editing
+                  ? 'Save Profile'
+                  : '✎ Edit Profile'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -156,6 +342,7 @@ export default function Profile() {
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => setEditing(false)}
+              disabled={saving}
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
@@ -222,7 +409,7 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
 
-      {/* EXTRA SPACE FOR THE FLOATING TAB BAR */}
+      {/* EXTRA SPACE FOR FLOATING TAB BAR */}
       <View style={styles.bottomSpace} />
     </ScrollView>
   );
@@ -517,8 +704,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // SPACE FOR YOUR FLOATING TAB BAR
+  // SPACE FOR FLOATING TAB BAR
   bottomSpace: {
     height: 120,
+  },
+  coverEditButton: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    backgroundColor: 'rgba(83, 82, 82, 0.78)',
+    paddingVertical: 8,
+    paddingHorizontal: 13,
+    borderRadius: 20,
+  },
+
+  coverEditText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

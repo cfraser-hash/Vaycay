@@ -1,17 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 
-
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: 'white',
-        headerStyle: {
-          backgroundColor: 'grey',
-        },
-        headerShadowVisible: false,
-        headerTintColor: 'white',
+        tabBarInactiveTintColor: 'white',
+        headerShown: false,
         tabBarStyle: {
           position: 'absolute',
           bottom: 20,
@@ -27,33 +23,58 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'compass' : 'compass-outline'} color={color} size={24} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name={focused ? 'compass' : 'compass-outline'}
+              color="white"
+              size={24}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="search"
         options={{
           title: 'Search',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'search' : 'search-outline'} color={color} size={24}/>
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name={focused ? 'search' : 'search-outline'}
+              color="white"
+              size={24}
+            />
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Create',
+          tabBarIcon: ({focused}) => (
+            <Ionicons 
+            name={ focused ? "add-circle" : 'add-circle-outline'} 
+            color = "white"
+            size={24} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} color={color} size={24}/>
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              color="white"
+              size={24}
+            />
           ),
         }}
       />
     </Tabs>
   );
 }
-
-
 
 

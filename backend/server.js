@@ -1,4 +1,3 @@
-
 // VAYCAY Backend Server
 
 // Load environment variables
