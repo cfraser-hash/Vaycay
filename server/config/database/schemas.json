@@ -168,6 +168,58 @@
     }
   },
   {
+    "collection": "comments",
+    "validator": {
+      "$jsonSchema": {
+        "title": "comments",
+        "bsonType": "object",
+        "required": ["post", "user", "content"],
+        "properties": {
+          "post": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the post being commented on"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who wrote the comment"
+          },
+          "content": {
+            "bsonType": "string",
+            "description": "must be a string containing the comment text"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the comment was posted"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "likes",
+    "validator": {
+      "$jsonSchema": {
+        "title": "likes",
+        "bsonType": "object",
+        "required": ["post", "user"],
+        "properties": {
+          "post": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the liked post"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who liked the post"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the like was created"
+          }
+        }
+      }
+    }
+  },
+  {
     "collection": "messages",
     "validator": {
       "$jsonSchema": {
