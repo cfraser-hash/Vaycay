@@ -59,6 +59,48 @@
     }
   },
   {
+    "collection": "destinations",
+    "validator": {
+      "$jsonSchema": {
+        "title": "destinations",
+        "bsonType": "object",
+        "required": ["name", "country"],
+        "properties": {
+          "name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "country": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "region": {
+            "bsonType": "string",
+            "description": "optional string region or state/province"
+          },
+          "description": {
+            "bsonType": "string",
+            "description": "optional string description of the destination"
+          },
+          "tags": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" },
+            "description": "optional array of discovery tags"
+          },
+          "image_references": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" },
+            "description": "optional array of image URLs or references"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the destination was added"
+          }
+        }
+      }
+    }
+  },
+  {
     "collection": "trips",
     "validator": {
       "$jsonSchema": {
@@ -214,6 +256,30 @@
           "created_at": {
             "bsonType": ["date", "string"],
             "description": "timestamp recording when the like was created"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "follows",
+    "validator": {
+      "$jsonSchema": {
+        "title": "follows",
+        "bsonType": "object",
+        "required": ["followerUserId", "followedUserId"],
+        "properties": {
+          "followerUserId": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who is following"
+          },
+          "followedUserId": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user being followed"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the follow occurred"
           }
         }
       }
