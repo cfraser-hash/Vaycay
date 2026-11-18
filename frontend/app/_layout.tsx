@@ -12,6 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="create-trip" />
       <Stack.Screen name="create-post" />
+      <Stack.Screen name="attraction" />
     </Stack>
   );
 }

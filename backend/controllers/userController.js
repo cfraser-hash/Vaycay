@@ -189,9 +189,163 @@ async function updateProfile(req, res) {
         });
     }
 }
+// GET SAVED FAVORITES
+async function getFavorites(req, res) {
+    try {
+        const user = await findUserById(req.user.userId);
 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            favorites: user.favorites || []
+        });
+
+    } catch (error) {
+        console.error("Get favorites error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to retrieve favorites."
+        });
+    }
+}
+
+// SAVE AN ATTRACTION TO FAVORITES
+async function saveFavorite(req, res) {
+    try {
+        const {
+            id,
+            name,
+            address,
+            latitude,
+            longitude,
+            category,
+            distance
+        } = req.body;
+
+        if (
+            typeof id !== "string" || !id.trim() ||
+            typeof name !== "string" || !name.trim()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid attraction ID and name are required."
+            });
+        }
+
+        const user = await findUserById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        const favorites = user.favorites || [];
+
+        if (favorites.some(item => item.id === id)) {
+            return res.status(200).json({
+                success: true,
+                message: "Attraction is already saved.",
+                alreadySaved: true
+            });
+        }
+
+        const favorite = {
+            id: id.trim(),
+            name: name.trim(),
+            address: typeof address === "string" ? address : "",
+            latitude: Number.isFinite(Number(latitude))
+                ? Number(latitude) : null,
+            longitude: Number.isFinite(Number(longitude))
+                ? Number(longitude) : null,
+            category: typeof category === "string" ? category : "",
+            distance: Number.isFinite(Number(distance))
+                ? Number(distance) : null,
+            savedAt: new Date()
+        };
+
+        const users = getUsersCollection();
+
+        await users.updateOne(
+            { _id: user._id },
+            { $push: { favorites: favorite } }
+        );
+
+        return res.status(201).json({
+            success: true,
+            message: "Attraction saved to favorites!",
+            favorite
+        });
+
+    } catch (error) {
+        console.error("Save favorite error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to save favorite."
+        });
+    }
+}
+
+// REMOVE AN ATTRACTION FROM FAVORITES
+async function removeFavorite(req, res) {
+    try {
+        const { favoriteId } = req.params;
+
+        if (!favoriteId) {
+            return res.status(400).json({
+                success: false,
+                message: "Favorite ID is required."
+            });
+        }
+
+        const user = await findUserById(req.user.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        const users = getUsersCollection();
+
+        await users.updateOne(
+            { _id: user._id },
+            {
+                $pull: {
+                    favorites: { id: favoriteId }
+                }
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Favorite removed."
+        });
+
+    } catch (error) {
+        console.error("Remove favorite error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to remove favorite."
+        });
+    }
+}
 // Export functions
 module.exports = {
     getProfile,
-    updateProfile
+    updateProfile,
+    getFavorites,
+    saveFavorite,
+    removeFavorite
 };

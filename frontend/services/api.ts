@@ -217,3 +217,149 @@ export async function uploadProfileImage(
 
   return imageURL as string;
 }
+
+// DESTINATION SEARCH RESULT TYPE
+export type DestinationSuggestion = {
+  id: string;
+  name: string;
+  country: string;
+  city: string;
+  state: string;
+  formatted: string;
+  latitude: number;
+  longitude: number;
+  type: string;
+};
+
+// ATTRACTION RESULT TYPE
+export type NearbyPlace = {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  categories: string[];
+  distance: number | null;
+  image?: string | null;
+  imageAttribution?: string | null;
+};
+
+// SEARCH CITIES, COUNTRIES, AND PLACES
+export async function searchDestinationSuggestions(
+  query: string
+): Promise<DestinationSuggestion[]> {
+  const response = await fetch(
+    `${API_URL}/places/autocomplete?text=${encodeURIComponent(query)}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Unable to search destinations."
+    );
+  }
+
+  return data.results || [];
+}
+
+// FIND ATTRACTIONS NEAR A SELECTED DESTINATION
+export async function getNearbyAttractions(
+  latitude: number,
+  longitude: number,
+  category: "attractions" | "museums" | "beaches" | "parks" | "culture" = "attractions"
+): Promise<NearbyPlace[]> {
+  const params = new URLSearchParams({
+    lat: String(latitude),
+    lon: String(longitude),
+    category,
+  });
+
+  const response = await fetch(
+    `${API_URL}/places/nearby?${params.toString()}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Unable to find nearby attractions."
+    );
+  }
+
+  return data.results || [];
+}
+// GET SAVED FAVORITES
+export async function getFavorites(token: string) {
+  const response = await fetch(`${API_URL}/users/favorites`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to retrieve favorites.");
+  }
+
+  return data.favorites || [];
+}
+
+// SAVE AN ATTRACTION TO FAVORITES
+export async function saveFavorite(
+  token: string,
+  attraction: {
+    id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    category: string;
+    distance: number | null;
+  }
+) {
+  const response = await fetch(`${API_URL}/users/favorites`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(attraction),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to save favorite.");
+  }
+
+  return data;
+}
+
+// REMOVE AN ATTRACTION FROM FAVORITES
+export async function removeFavorite(
+  token: string,
+  favoriteId: string
+) {
+  const response = await fetch(
+    `${API_URL}/users/favorites/${encodeURIComponent(favoriteId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to remove favorite.");
+  }
+
+  return data;
+}
