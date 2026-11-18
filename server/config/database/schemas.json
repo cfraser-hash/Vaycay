@@ -1,0 +1,359 @@
+[
+  {
+    "collection": "users",
+    "validator": {
+      "$jsonSchema": {
+        "title": "users",
+        "bsonType": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "username",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "first_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "last_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "username": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "email": {
+            "bsonType": "string",
+            "pattern": "^.+@.+$",
+            "description": "must be a valid email string and is required"
+          },
+          "password": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "passwordHash": {
+            "bsonType": "string",
+            "description": "optional hashed password string"
+          },
+          "profile_picture_url": {
+            "bsonType": "string",
+            "description": "optional string URL for profile picture"
+          },
+          "bio": {
+            "bsonType": "string",
+            "description": "optional string bio"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the user registered"
+          },
+          "updated_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the user profile was last updated"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "destinations",
+    "validator": {
+      "$jsonSchema": {
+        "title": "destinations",
+        "bsonType": "object",
+        "required": ["name", "country"],
+        "properties": {
+          "name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "country": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "region": {
+            "bsonType": "string",
+            "description": "optional string region or state/province"
+          },
+          "description": {
+            "bsonType": "string",
+            "description": "optional string description of the destination"
+          },
+          "tags": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" },
+            "description": "optional array of discovery tags"
+          },
+          "image_references": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" },
+            "description": "optional array of image URLs or references"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the destination was added"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "trips",
+    "validator": {
+      "$jsonSchema": {
+        "title": "trips",
+        "bsonType": "object",
+        "required": ["user", "destination", "startDate", "endDate"],
+        "properties": {
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who created the trip"
+          },
+          "destination": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+          },
+          "startDate": {
+            "bsonType": ["date", "string"],
+            "description": "must be a date and is required"
+          },
+          "endDate": {
+            "bsonType": ["date", "string"],
+            "description": "must be a date and is required"
+          },
+          "budget": {
+            "bsonType": ["number", "double", "int"],
+            "description": "must be a number if specified"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "itineraries",
+    "validator": {
+      "$jsonSchema": {
+        "title": "itineraries",
+        "bsonType": "object",
+        "required": ["trip", "user", "title", "activities"],
+        "properties": {
+          "trip": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the associated trip"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the owner user"
+          },
+          "title": {
+            "bsonType": "string",
+            "description": "must be a string title for the itinerary"
+          },
+          "activities": {
+            "bsonType": "array",
+            "description": "array of activity items or daily plans",
+            "items": {
+              "bsonType": "object"
+            }
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp when created"
+          },
+          "updated_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp when last updated"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "posts",
+    "validator": {
+      "$jsonSchema": {
+        "title": "posts",
+        "bsonType": "object",
+        "required": ["user", "caption"],
+        "properties": {
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who created the post"
+          },
+          "trip": {
+            "bsonType": ["objectId", "null"],
+            "description": "optional ObjectId referencing the trip associated with this post"
+          },
+          "caption": {
+            "bsonType": "string",
+            "description": "must be a string containing post text/description"
+          },
+          "media_urls": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" },
+            "description": "must be an array of image/video URL strings"
+          },
+          "likes": {
+            "bsonType": "array",
+            "items": { "bsonType": "objectId" },
+            "description": "must be an array of user ObjectIds who liked this post"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "must be a date recording when the post was published"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "comments",
+    "validator": {
+      "$jsonSchema": {
+        "title": "comments",
+        "bsonType": "object",
+        "required": ["post", "user", "content"],
+        "properties": {
+          "post": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the post being commented on"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who wrote the comment"
+          },
+          "content": {
+            "bsonType": "string",
+            "description": "must be a string containing the comment text"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the comment was posted"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "likes",
+    "validator": {
+      "$jsonSchema": {
+        "title": "likes",
+        "bsonType": "object",
+        "required": ["post", "user"],
+        "properties": {
+          "post": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the liked post"
+          },
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who liked the post"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the like was created"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "follows",
+    "validator": {
+      "$jsonSchema": {
+        "title": "follows",
+        "bsonType": "object",
+        "required": ["followerUserId", "followedUserId"],
+        "properties": {
+          "followerUserId": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user who is following"
+          },
+          "followedUserId": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the user being followed"
+          },
+          "created_at": {
+            "bsonType": ["date", "string"],
+            "description": "timestamp recording when the follow occurred"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "messages",
+    "validator": {
+      "$jsonSchema": {
+        "title": "messages",
+        "bsonType": "object",
+        "required": ["sender", "receiver", "text"],
+        "properties": {
+          "sender": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the message sender"
+          },
+          "receiver": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the recipient user or trip group"
+          },
+          "text": {
+            "bsonType": "string",
+            "description": "must be a string containing the message content"
+          },
+          "sent_at": {
+            "bsonType": ["date", "string"],
+            "description": "must be a date recording when the message was sent"
+          },
+          "is_read": {
+            "bsonType": "bool",
+            "description": "must be a boolean indicating if the recipient read the message"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "saved_trips",
+    "validator": {
+      "$jsonSchema": {
+        "title": "saved_trips",
+        "bsonType": "object",
+        "required": ["user", "trip"],
+        "properties": {
+          "user": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the User who saved the trip"
+          },
+          "trip": {
+            "bsonType": "objectId",
+            "description": "must be an ObjectId referencing the saved Trip"
+          },
+          "savedAt": {
+            "bsonType": ["date", "string"],
+            "description": "must be a date recording when it was saved"
+          }
+        }
+      }
+    }
+  },
+  {
+    "collection": "questionnaires",
+    "validator": {
+      "$jsonSchema": {
+        "title": "questionnaires",
+        "bsonType": "object",
+        "required": ["user_id", "answers"],
+        "properties": {
+          "user_id": { "bsonType": "objectId" },
+          "trip_id": { "bsonType": ["objectId", "null"] },
+          "answers": { "bsonType": "object" }
+        }
+      }
+    }
+  }
+]
