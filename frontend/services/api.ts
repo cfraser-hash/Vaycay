@@ -3,7 +3,7 @@
 import type { ImagePickerAsset } from "expo-image-picker";
 import { Platform } from "react-native";
 
-const API_URL = "http://172.19.109.47:3000/api";
+const API_URL = "https:vaycay-9woq.onrender.com";
 
 // SIGNUP REQUEST
 export async function signupUser(userData: {
