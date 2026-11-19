@@ -225,7 +225,7 @@ export default function DiscoverScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.eyebrow}>YOUR NEXT ADVENTURE</Text>
-            <Text style={styles.title}>DIH</Text>
+            <Text style={styles.title}>Discover</Text>
             <Text style={styles.subtitle}>
               Find a place worth exploring.
             </Text>
