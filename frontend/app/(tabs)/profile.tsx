@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import {
+  getFavorites,
   getProfile,
   updateProfile,
   uploadProfileImage
@@ -46,6 +47,41 @@ export default function Profile() {
   const [editUsername, setEditUsername] = useState(user.username);
   const [editBio, setEditBio] = useState(user.bio);
   const [saving, setSaving] = useState(false);
+
+  // LOAD SAVED ATTRACTIONS WHEN PROFILE OPENS
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      async function loadSavedCount() {
+        try {
+          const token = await getAuthToken();
+
+          if (!token) {
+            console.log('No authentication token found.');
+            return;
+          }
+
+          const favorites = await getFavorites(token);
+
+          if (active) {
+            setUser((currentUser) => ({
+              ...currentUser,
+              saved: favorites.length,
+            }));
+          }
+        } catch (error) {
+          console.error('Unable to load saved attractions:', error);
+        }
+      }
+
+      loadSavedCount();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   // LOAD USER PROFILE FROM DATABASE
   useEffect(() => {
