@@ -222,6 +222,42 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             );
         }
 
+        // Limit Wikimedia requests to 3 at a time
+        function createRequestLimiter(maxConcurrent) {
+            let activeRequests = 0;
+            const queue = [];
+
+            function runNext() {
+                if (
+                    activeRequests >= maxConcurrent ||
+                    queue.length === 0
+                ) {
+                    return;
+                }
+
+                activeRequests++;
+
+                const { task, resolve, reject } = queue.shift();
+
+                Promise.resolve()
+                    .then(task)
+                    .then(resolve, reject)
+                    .finally(() => {
+                        activeRequests--;
+                        runNext();
+                    });
+            }
+
+            return function limitRequest(task) {
+                return new Promise((resolve, reject) => {
+                    queue.push({ task, resolve, reject });
+                    runNext();
+                });
+            };
+        }
+
+        const limitImageRequest = createRequestLimiter(3);
+
         // Filter results and retrieve matching images
         const results = await Promise.all(
             (geoData.features || [])
