@@ -404,10 +404,15 @@ export default function Profile() {
 
         <View style={styles.divider} />
 
-        <View style={styles.stat}>
+        <TouchableOpacity
+          style={styles.stat}
+          onPress={() => router.push("./saved")}
+          accessibilityRole="button"
+          accessibilityLabel={`Saved items, ${user.saved} saved attractions`}
+        >
           <Text style={styles.statNumber}>{user.saved}</Text>
           <Text style={styles.statLabel}>Saved</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* MY TRIPS */}
