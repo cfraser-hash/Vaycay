@@ -121,6 +121,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
         const category =
             requestUrl.searchParams.get("category") || "attractions";
 
+        // Available attraction categories
         const categoryOptions = {
             attractions: "tourism",
             museums: "entertainment.museum",
@@ -128,7 +129,10 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             parks: "leisure.park",
             culture: "entertainment.culture"
         };
-        const radius = 50000;
+
+        // Maximum search distance: 50 kilometers
+        const MAX_DISTANCE = 50000;
+        const radius = MAX_DISTANCE;
 
         if (!apiKey) {
             return sendJson(res, 500, {
@@ -137,6 +141,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             });
         }
 
+        // Validate coordinates
         if (
             !Number.isFinite(latitude) ||
             !Number.isFinite(longitude) ||
@@ -151,6 +156,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             });
         }
 
+        // Validate category
         if (!categoryOptions[category]) {
             return sendJson(res, 400, {
                 success: false,
@@ -158,6 +164,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             });
         }
 
+        // Build Geoapify request
         const geoUrl = new URL(
             "https://api.geoapify.com/v2/places"
         );
@@ -193,9 +200,51 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             });
         }
 
+        // Calculate the actual distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const earthRadius = 6371000;
+
+            const toRadians = (degrees) =>
+                degrees * Math.PI / 180;
+
+            const dLat = toRadians(lat2 - lat1);
+            const dLon = toRadians(lon2 - lon1);
+
+            const a =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRadians(lat1)) *
+                Math.cos(toRadians(lat2)) *
+                Math.sin(dLon / 2) ** 2;
+
+            return earthRadius * 2 * Math.atan2(
+                Math.sqrt(a),
+                Math.sqrt(1 - a)
+            );
+        }
+
+        // Filter results and retrieve matching images
         const results = await Promise.all(
             (geoData.features || [])
-                .filter((feature) => feature.properties.place_id)
+                .filter((feature) => {
+                    const place = feature.properties || {};
+
+                    if (
+                        !place.place_id ||
+                        !Number.isFinite(place.lat) ||
+                        !Number.isFinite(place.lon)
+                    ) {
+                        return false;
+                    }
+
+                    const distance = calculateDistance(
+                        latitude,
+                        longitude,
+                        place.lat,
+                        place.lon
+                    );
+
+                    return distance <= MAX_DISTANCE;
+                })
                 .map(async (feature) => {
                     const place = feature.properties || {};
 
@@ -204,64 +253,123 @@ async function searchNearbyPlaces(req, res, requestUrl) {
                         place.address_line1 ||
                         "Unnamed place";
 
-
                     let image = null;
                     let imageAttribution = null;
 
+                   
+                    // Search Wikimedia for a matching attraction image
                     try {
                         const imageUrl = new URL(
                             "https://commons.wikimedia.org/w/api.php"
                         );
 
-                        const searchText = name;
+                        // Include location information to improve search relevance
+                        const searchText = [
+                            name,
+                            place.city,
+                            place.country
+                        ].filter(Boolean).join(" ");
 
                         imageUrl.searchParams.set("action", "query");
                         imageUrl.searchParams.set("generator", "search");
                         imageUrl.searchParams.set("gsrsearch", searchText);
                         imageUrl.searchParams.set("gsrnamespace", "6");
-                        imageUrl.searchParams.set("gsrlimit", "5");
-                        imageUrl.searchParams.set("prop", "imageinfo");
-                        imageUrl.searchParams.set("iiprop", "url|mime|extmetadata");
+                        imageUrl.searchParams.set("gsrlimit", "10");
+                        imageUrl.searchParams.set(
+                            "prop",
+                            "imageinfo"
+                        );
+                        imageUrl.searchParams.set(
+                            "iiprop",
+                            "url|mime|extmetadata"
+                        );
                         imageUrl.searchParams.set("iiurlwidth", "600");
                         imageUrl.searchParams.set("format", "json");
                         imageUrl.searchParams.set("origin", "*");
 
                         const imageResponse = await fetch(imageUrl);
                         const imageData = await imageResponse.json();
-                            console.log("WIKIMEDIA STATUS:", imageResponse.status);
-                            console.log("WIKIMEDIA RESULTS:", Object.keys(imageData.query?.pages || {}).length);
-                            console.log("WIKIMEDIA ERROR:", imageData.error || "None");``
+
+                        if (!imageResponse.ok) {
+                            throw new Error("Wikimedia image search failed.");
+                        }
 
                         const pages = Object.values(
                             imageData.query?.pages || {}
-                        ).sort((a, b) => (a.index || 0) - (b.index || 0));
+                        );
 
-                        // Only accept common photo formats
-                        const validExtensions = [
-                            ".jpg",
-                            ".jpeg",
-                            ".png",
-                            ".webp",
-                            ".gif"
+                        // Normalize words for comparing attraction and image names
+                        function normalizeWords(value) {
+                            return value
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .toLowerCase()
+                                .replace(/^file:/, "")
+                                .replace(/[_-]/g, " ")
+                                .replace(/[^a-z0-9\s]/g, " ")
+                                .split(/\s+/)
+                                .filter(Boolean);
+                        }
+
+                        const ignoredWords = [
+                            "the",
+                            "of",
+                            "and",
+                            "a",
+                            "an",
+                            "de",
+                            "du",
+                            "la",
+                            "le",
+                            "des",
+                            "in",
+                            "at"
                         ];
 
-                        console.log("IMAGE SEARCH:", name);
-                        console.log("PAGES FOUND:", pages.length);
-
-                        const matchingPage = pages.find((page) => {
-                            const imageInfo = page.imageinfo?.[0];
-
-                            if (!imageInfo) {
-                                return false;
-                            }
-
-
-                            return (
-                                imageInfo.mime?.startsWith('image/') &&
-                                imageInfo.mime != "image/svg+xml"
+                        const attractionWords = [
+                            ...new Set(
+                                normalizeWords(name).filter(
+                                    word => !ignoredWords.includes(word)
+                                )
                             )
-                        });
+                        ];
 
+                        // Score image titles based on attraction-name matches
+                        const matchingPages = pages
+                            .map((page) => {
+                                const imageInfo = page.imageinfo?.[0];
+
+                                if (
+                                    !imageInfo ||
+                                    !imageInfo.mime?.startsWith("image/") ||
+                                    imageInfo.mime === "image/svg+xml"
+                                ) {
+                                    return null;
+                                }
+
+                                const imageTitle = normalizeWords(
+                                    page.title || ""
+                                );
+
+                                const matchedWords = attractionWords.filter(
+                                    word => imageTitle.includes(word)
+                                );
+
+                                const score = attractionWords.length > 0
+                                    ? matchedWords.length / attractionWords.length
+                                    : 0;
+
+                                return {
+                                    page,
+                                    score
+                                };
+                            })
+                            .filter(Boolean)
+                            .filter(item => item.score >= 0.6)
+                            .sort((a, b) => b.score - a.score);
+
+                        // Only use an image with a reasonable name match
+                        const matchingPage = matchingPages[0]?.page;
                         const imageInfo = matchingPage?.imageinfo?.[0];
 
                         if (imageInfo) {
@@ -272,8 +380,15 @@ async function searchNearbyPlaces(req, res, requestUrl) {
 
                             imageAttribution =
                                 imageInfo.extmetadata?.Artist?.value ||
+                                imageInfo.extmetadata?.Credit?.value ||
                                 null;
                         }
+
+                        console.log(
+                            "IMAGE MATCH:",
+                            name,
+                            matchingPage?.title || "No reliable match"
+                        );
 
                     } catch (imageError) {
                         console.error(
@@ -283,6 +398,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
                     }
 
 
+                    // Return attraction information
                     return {
                         id: place.place_id,
                         name,
@@ -290,13 +406,19 @@ async function searchNearbyPlaces(req, res, requestUrl) {
                         latitude: place.lat,
                         longitude: place.lon,
                         categories: place.categories || [],
-                        distance: place.distance || null,
+                        distance: calculateDistance(
+                            latitude,
+                            longitude,
+                            place.lat,
+                            place.lon
+                        ),
                         image,
                         imageAttribution
                     };
                 })
         );
-                return sendJson(res, 200, {
+
+        return sendJson(res, 200, {
             success: true,
             results
         });
