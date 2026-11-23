@@ -68,6 +68,7 @@ async function searchDestinations(req, res, requestUrl) {
         geoUrl.searchParams.set("text", query);
         geoUrl.searchParams.set("format", "json");
         geoUrl.searchParams.set("limit", "8");
+        geoUrl.searchParams.set("lang", "en");
         geoUrl.searchParams.set("apiKey", apiKey);
 
         const geoResponse = await fetch(geoUrl);
@@ -127,7 +128,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
             parks: "leisure.park",
             culture: "entertainment.culture"
         };
-        const radius = category === "beaches" ? 150000 : 10000;
+        const radius = 50000;
 
         if (!apiKey) {
             return sendJson(res, 500, {
@@ -177,6 +178,7 @@ async function searchNearbyPlaces(req, res, requestUrl) {
         );
 
         geoUrl.searchParams.set("limit", "20");
+        geoUrl.searchParams.set("lang", "en");
         geoUrl.searchParams.set("apiKey", apiKey);
 
         const geoResponse = await fetch(geoUrl);
