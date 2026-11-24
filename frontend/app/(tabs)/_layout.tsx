@@ -73,6 +73,20 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="saved"
+        options={{
+          title: 'Saved',
+          tabBarIcon: ({ focused }) => (
+            <Ionicons
+              name={focused ? 'bookmark' : 'bookmark-outline'}
+              color='white'
+              size={24}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

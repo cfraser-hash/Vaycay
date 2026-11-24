@@ -406,7 +406,7 @@ export default function Profile() {
 
         <TouchableOpacity
           style={styles.stat}
-          onPress={() => router.push("./saved")}
+          onPress={() => router.push("/(tabs)/saved")}
           accessibilityRole="button"
           accessibilityLabel={`Saved items, ${user.saved} saved attractions`}
         >

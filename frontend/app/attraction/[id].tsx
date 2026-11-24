@@ -3,6 +3,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Image,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -27,6 +29,8 @@ export default function AttractionDetailsScreen() {
     distance,
     latitude,
     longitude,
+    image, 
+    imageAttribution,
   } = useLocalSearchParams<{
     id: string;
     name: string;
@@ -35,6 +39,8 @@ export default function AttractionDetailsScreen() {
     distance: string;
     latitude: string;
     longitude: string;
+    image: string;
+    imageAttribution: string;
   }>();
 
   const [isFavorite, setIsFavorite] = useState(false);
@@ -150,6 +156,24 @@ export default function AttractionDetailsScreen() {
       ? `${(meters / 1000).toFixed(1)} km away`
       : `${Math.round(meters)} m away`;
   }
+  async function openInMaps() {
+    const destination =
+      latitude && longitude
+        ? `${latitude},${longitude}`
+        : address || name || "";
+
+    if (!destination) return;
+
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      destination
+    )}`;
+
+    try {
+      await Linking.openURL(mapsUrl);
+    } catch (error) {
+      console.error("Unable to open Google Maps:", error);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -162,6 +186,21 @@ export default function AttractionDetailsScreen() {
           <Ionicons name="arrow-back" size={23} color="#176B58" />
           <Text style={styles.backText}>Back to Discover</Text>
         </TouchableOpacity>
+        
+        {image ? (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: image }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+            {imageAttribution ? (
+              <Text style={styles.imageAttribution}>
+                Photo credit: {imageAttribution}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* ATTRACTION HEADER */}
         <View style={styles.hero}>
@@ -213,7 +252,25 @@ export default function AttractionDetailsScreen() {
           ) : null}
         </View>
 
+        {/* ABOUT THIS PLACE */}
+        <Text style={styles.sectionTitle}>
+          About this place
+        </Text>
+
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionText}>
+            {name
+              ? `${name} is listed as a ${
+                  category || "place to visit"
+                }. Explore its location, check the address, and use the map below to plan your visit.`
+              : "Explore this attraction, check its location, and plan your visit."}
+          </Text>
+        </View>
+
         {/* INFORMATION */}
+        <Text style={styles.sectionTitle}>
+          Visit Information
+        </Text>
         <Text style={styles.sectionTitle}>
           About this place
         </Text>
@@ -271,27 +328,28 @@ export default function AttractionDetailsScreen() {
           </View>
         </View>
 
-        {/* FUTURE MAP SECTION */}
+        {/* LOCATION */}
         <Text style={styles.sectionTitle}>
           Location
         </Text>
 
-        <View style={styles.mapPlaceholder}>
-          <Ionicons
-            name="map-outline"
-            size={40}
-            color="#176B58"
-          />
+        <TouchableOpacity
+          style={styles.mapsButton}
+          onPress={openInMaps}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="map-outline" size={23} color="#FFFFFF" />
 
-          <Text style={styles.mapTitle}>
-            Map coming soon
+          <Text style={styles.mapsButtonText}>
+            Open in Google Maps
           </Text>
 
-          <Text style={styles.mapDescription}>
-            You'll be able to view this attraction on a map
-            in a future VAYCAY update.
-          </Text>
-        </View>
+          <Ionicons name="open-outline" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <Text style={styles.mapsDescription}>
+          View this attraction's location and plan your route.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -417,17 +475,57 @@ const styles = StyleSheet.create({
     padding: 30,
     alignItems: "center",
   },
-  mapTitle: {
-    color: "#174D40",
-    fontSize: 17,
-    fontWeight: "700",
-    marginTop: 12,
+
+  imageContainer: {
+  marginBottom: 20,
   },
-  mapDescription: {
+  heroImage: {
+    width: "100%",
+    height: 250,
+    borderRadius: 18,
+  },
+  imageAttribution: {
+    fontSize: 10,
+    color: "#78837D",
+    marginTop: 6,
+  },
+  descriptionCard: {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 16,
+  padding: 18,
+  borderWidth: 1,
+  borderColor: "#E9EEEA",
+  marginBottom: 25,
+  },
+
+  descriptionText: {
     color: "#52675D",
-    fontSize: 13,
+    fontSize: 14,
+    lineHeight: 23,
+  },
+
+  mapsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    backgroundColor: "#176B58",
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+
+  mapsButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  mapsDescription: {
+    color: "#78837D",
+    fontSize: 12,
     textAlign: "center",
-    lineHeight: 20,
-    marginTop: 7,
+    marginTop: 10,
+    marginBottom: 25,
   },
 });

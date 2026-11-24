@@ -2,21 +2,21 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import {
-    getFavorites,
-    removeFavorite,
-} from '../services/api';
+  getFavorites,
+  removeFavorite,
+} from '../../services/api';
 
-import { getAuthToken } from '../services/authStorage';
+import { getAuthToken } from '../../services/authStorage';
 
 type SavedAttraction = {
   id: string;
@@ -27,6 +27,7 @@ type SavedAttraction = {
 };
 
 export default function SavedScreen() {
+  console.log("Saved screen opened");
   const [attractions, setAttractions] = useState<SavedAttraction[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);

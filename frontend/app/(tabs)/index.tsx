@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   SafeAreaView,
@@ -19,11 +20,16 @@ import {
 } from "../../data/destinations";
 
 import {
+  getFavorites,
   getNearbyAttractions,
+  removeFavorite,
+  saveFavorite,
   searchDestinationSuggestions,
   type DestinationSuggestion,
   type NearbyPlace,
 } from "../../services/api";
+
+import { getAuthToken } from "../../services/authStorage";
 
 const nearbyCategories = [
   { label: "Attractions", value: "attractions" },
@@ -39,6 +45,7 @@ export default function DiscoverScreen() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   // Geoapify destination search
   const [suggestions, setSuggestions] = useState<DestinationSuggestion[]>([]);
@@ -99,7 +106,7 @@ export default function DiscoverScreen() {
     };
   }, [search, selectedDestination]);
 
-  // Filter the original VAYCAY destination catalog
+  // Filter original VAYCAY destination catalog
   const filteredDestinations = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -131,7 +138,51 @@ export default function DiscoverScreen() {
     });
   }
 
-  // Load nearby places for a selected destination
+  // SAVE OR REMOVE AN ATTRACTION
+  async function toggleFavorite(place: NearbyPlace) {
+    try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        Alert.alert(
+          "Login required",
+          "Please log in to save attractions."
+        );
+        return;
+      }
+
+      const isSaved = favoriteIds.includes(place.id);
+
+      if (isSaved) {
+        await removeFavorite(token, place.id);
+
+        setFavoriteIds((current) =>
+          current.filter((id) => id !== place.id)
+        );
+      } else {
+        await saveFavorite(token, {
+          id: place.id,
+          name: place.name,
+          address: place.address,
+          latitude: place.latitude,
+          longitude: place.longitude,
+          category: place.categories?.[0] || nearbyCategory,
+          distance: place.distance,
+        });
+
+        setFavoriteIds((current) => [...current, place.id]);
+      }
+    } catch (error) {
+      console.error("Unable to update favorite:", error);
+
+      Alert.alert(
+        "Something went wrong",
+        "Unable to update your saved attractions. Please try again."
+      );
+    }
+  }
+
+  // Load nearby places for selected destination
   async function loadNearbyPlaces(
     destination: DestinationSuggestion,
     category: NearbyCategory
@@ -167,17 +218,43 @@ export default function DiscoverScreen() {
     }
   }
 
+  // LOAD SAVED ATTRACTIONS FROM DATABASE
+  useEffect(() => {
+    async function loadFavorites() {
+      try {
+        const token = await getAuthToken();
+
+        if (!token) return;
+
+        const favorites = await getFavorites(token);
+
+        setFavoriteIds(
+          favorites.map((favorite: { id: string }) => favorite.id)
+        );
+      } catch (error) {
+        console.error("Unable to load saved attractions:", error);
+      }
+    }
+
+    loadFavorites();
+  }, []);
+
   // Select a city or country from Geoapify
   function selectDestination(destination: DestinationSuggestion) {
     setSelectedDestination(destination);
-    setSearch(destination.formatted || `${destination.name}, ${destination.country}`);
+
+    setSearch(
+      destination.formatted ||
+        `${destination.name}, ${destination.country}`
+    );
+
     setSuggestions([]);
     setNearbyCategory("attractions");
 
     loadNearbyPlaces(destination, "attractions");
   }
 
-  // Change the nearby attraction category
+  // Change nearby attraction category
   function changeNearbyCategory(category: NearbyCategory) {
     if (!selectedDestination) return;
 
@@ -185,7 +262,7 @@ export default function DiscoverScreen() {
     loadNearbyPlaces(selectedDestination, category);
   }
 
-  // Clear the destination search
+  // Clear destination search
   function clearSearch() {
     nearbyRequestId.current += 1;
 
@@ -295,9 +372,7 @@ export default function DiscoverScreen() {
         {/* LIVE SEARCH SUGGESTIONS */}
         {!selectedDestination && suggestions.length > 0 && (
           <View style={styles.suggestionsContainer}>
-            <Text style={styles.sectionTitle}>
-              Search results
-            </Text>
+            <Text style={styles.sectionTitle}>Search results</Text>
 
             {suggestions.map((item) => (
               <TouchableOpacity
@@ -346,9 +421,11 @@ export default function DiscoverScreen() {
                 size={35}
                 color="#8A9099"
               />
+
               <Text style={styles.emptyTitle}>
                 No matching destinations
               </Text>
+
               <Text style={styles.emptyText}>
                 Try searching for another city or country.
               </Text>
@@ -470,57 +547,104 @@ export default function DiscoverScreen() {
                 </View>
               )}
 
-            {/* REAL GEOAPIFY PLACES */}
-            {nearbyPlaces.map((place) => (
-              <TouchableOpacity
-                key={place.id}
-                style={styles.placeCard}
-                activeOpacity={0.75}
-                onPress={() => {
-                  console.log("Attraction card pressed:", place.name,{
-                    name: place.name,
-                    id: place.id,
-                  });
+            {/* EDITORIAL ATTRACTION CARDS */}
+            {nearbyPlaces.map((place) => {
+              const isSaved = favoriteIds.includes(place.id);
 
-                  router.push({
-                    pathname: "/attraction/[id]",
-                    params: {
-                      id: place.id,
-                      name: place.name,
-                      address: place.address,
-                      category: place.categories?.[0] || nearbyCategory,
-                      distance: String(place.distance ?? ""),
-                      latitude: String(place.latitude),
-                      longitude: String(place.longitude),
-                    },
-                  })
-                }}
-              >
-                {place.image ? (
-                  <Image
-                    source={{ uri: place.image }}
-                    style={styles.placeImage}
-                    resizeMode="cover"
-                  />
-                ) : null}
+              return (
+                <View
+                  key={place.id}
+                  style={styles.placeCard}
+                >
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/attraction/[id]",
+                        params: {
+                          id: place.id,
+                          name: place.name,
+                          address: place.address,
+                          category:
+                            place.categories?.[0] || nearbyCategory,
+                          distance: String(place.distance ?? ""),
+                          latitude: String(place.latitude),
+                          longitude: String(place.longitude),
+                          image: place.image || "",
+                          imageAttribution:
+                            place.imageAttribution || "",
+                        },
+                      });
+                    }}
+                  >
+                    {place.image ? (
+                      <Image
+                        source={{ uri: place.image }}
+                        style={styles.placeImage}
+                        resizeMode="cover"
+                      />
+                    ) : null}
 
-                <View style={styles.placeText}>
-                  <Text style={styles.placeName}>
-                    {place.name}
-                  </Text>
+                    <View style={styles.placeCardContent}>
+                      <Text style={styles.placeCategory}>
+                        {nearbyCategory.toUpperCase()}
+                      </Text>
 
-                  <Text style={styles.placeAddress}>
-                    {place.address}
-                  </Text>
+                      <Text style={styles.placeName}>
+                        {place.name}
+                      </Text>
 
-                  {formatDistance(place.distance) !== "" && (
-                    <Text style={styles.placeDistance}>
-                      {formatDistance(place.distance)}
-                    </Text>
-                  )}
+                      <Text style={styles.placeAddress}>
+                        {place.address ||
+                          "Location information unavailable"}
+                      </Text>
+
+                      <View style={styles.placeFooter}>
+                        <Ionicons
+                          name="location-outline"
+                          size={14}
+                          color="#176B58"
+                        />
+
+                        <Text style={styles.placeDistance}>
+                          {formatDistance(place.distance) ||
+                            "Distance unavailable"}
+                        </Text>
+
+                        <Text style={styles.viewDetails}>
+                          Explore place
+                        </Text>
+
+                        <Ionicons
+                          name="arrow-forward"
+                          size={14}
+                          color="#176B58"
+                        />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={() => toggleFavorite(place)}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isSaved
+                        ? "Remove from saved attractions"
+                        : "Save attraction"
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        isSaved ? "bookmark" : "bookmark-outline"
+                      }
+                      size={22}
+                      color="#176B58"
+                    />
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -689,12 +813,6 @@ export default function DiscoverScreen() {
 }
 
 const styles = StyleSheet.create({
-  placeImage: {
-    width: 76,
-    height: 76,
-    borderRadius: 12,
-    backgroundColor: "#EAF3ED",
-  },
   safeArea: {
     flex: 1,
     backgroundColor: "#F8FAF9",
@@ -869,42 +987,69 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   placeCard: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 22,
     borderWidth: 1,
     borderColor: "#E9EEEA",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 11,
-    gap: 12,
+    position: "relative",
   },
-  placeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#EAF3ED",
-    alignItems: "center",
-    justifyContent: "center",
+  placeImage: {
+    width: "100%",
+    height: 220,
+    backgroundColor: "#E5EAE7",
   },
-  placeText: {
-    flex: 1,
+  placeCardContent: {
+    padding: 18,
+  },
+  placeCategory: {
+    color: "#176B58",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 7,
   },
   placeName: {
     color: "#172B26",
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 21,
+    fontWeight: "800",
+    lineHeight: 27,
   },
   placeAddress: {
     color: "#68736F",
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  placeFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 15,
   },
   placeDistance: {
-    color: "#176B58",
+    color: "#68736F",
     fontSize: 11,
     fontWeight: "600",
-    marginTop: 5,
+    flex: 1,
+  },
+  viewDetails: {
+    color: "#176B58",
+    fontSize: 12,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+  favoriteButton: {
+    position: "absolute",
+    top: 13,
+    right: 13,
+    width: 43,
+    height: 43,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
   },
   statusText: {
     color: "#68736F",
@@ -1022,3 +1167,4 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 });
+

@@ -323,12 +323,37 @@ async function searchNearbyPlaces(req, res, requestUrl) {
                         imageUrl.searchParams.set("format", "json");
                         imageUrl.searchParams.set("origin", "*");
 
-                        const imageResponse = await fetch(imageUrl);
-                        const imageData = await imageResponse.json();
+                        const imageData = await limitImageRequest(async () => {
+                          const imageResponse = await fetch(imageUrl, {
+                            headers: {
+                                "User-Agent":
+                                    "VAYCAY/1.0 (https://github.com/cfraser-hash/Vaycay)"
+                            }
+                        });
 
-                        if (!imageResponse.ok) {
-                            throw new Error("Wikimedia image search failed.");
+                        const contentType =
+                            imageResponse.headers.get("content-type") || "";
+
+                        if (
+                            !imageResponse.ok ||
+                            !contentType.includes("application/json")
+                        ) {
+                            const responseText = await imageResponse.text();
+
+                            console.error(
+                                "WIKIMEDIA HTTP ERROR:",
+                                imageResponse.status,
+                                contentType,
+                                responseText.slice(0, 200)
+                            );
+
+                            throw new Error(
+                                `Wikimedia returned HTTP ${imageResponse.status}`
+                            );
                         }
+
+                        return await imageResponse.json();
+                    });
 
                         const pages = Object.values(
                             imageData.query?.pages || {}
